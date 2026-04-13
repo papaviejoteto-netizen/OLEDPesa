@@ -1,95 +1,87 @@
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <LiquidCrystal.h>
 #include "HX711.h"
 
-#define SCREEN_WIDTH 128 // Ancho de la pantalla OLED
-#define SCREEN_HEIGHT 64 // Alto de la pantalla OLED
-#define OLED_RESET -1 // Pin de reset (usa -1 si está conectado a VCC)
+LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
-#define DT 2
-#define SCK 3
+// Tus pines corregidos
+const int PIN_SCK = 22; 
+const int DT1 = 24;     
+const int DT2 = 25;     
+const int DT3 = 26;     
+const int DT4 = 27;     
 
-#define DT1 4
-#define SCK1 5
+HX711 s1, s2, s3, s4;
+int sensorActual = 1; // Variable para saber qué sensor ver
 
-#define DT2 6
-#define SCK2 7
-
-#define DT3 8
-#define SCK3 9
-
-HX711 balanza1;
-HX711 balanza2;
-/*
-HX711 balanza3;
-HX711 balanza4;
-*/
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+// ... (Tus definiciones iniciales igual)
 
 void setup() {
-  Serial.begin(9600);
-  balanza1.begin(DT, SCK);
-  balanza2.begin(DT1, SCK1);
+  lcd.begin(16, 2);
+  s1.begin(DT1, PIN_SCK); s2.begin(DT2, PIN_SCK);
+  s3.begin(DT3, PIN_SCK); s4.begin(DT4, PIN_SCK);
 
-  float escala = 211.78;
+  // Configuramos las escalas una sola vez aquí
+  s1.set_scale(215.8); s2.set_scale(210.0);
+  s3.set_scale(210.0); s4.set_scale(212.3);
 
-  balanza1.set_scale(escala); // Opcional, pero util para limpiar cualquier escala previa
-  balanza1.tare(20);    // Tarea la balanza (pone el peso en cero) con 20 lecturas para mayor precision
-
-  balanza2.set_scale(escala); // Opcional, pero util para limpiar cualquier escala previa
-  balanza2.tare(20);    // Tarea la balanza (pone el peso en cero) con 20 lecturas para mayor precision
-/*
-  balanza1.set_scale(); // Opcional, pero util para limpiar cualquier escala previa
-  balanza1.tare(20);    // Tarea la balanza (pone el peso en cero) con 20 lecturas para mayor precision
-
-  balanza3.begin(DT2, SCK2);
-  balanza4.begin(DT3, SCK3);
-  */
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Dirección I2C del OLED
-    Serial.println(F("Error al iniciar la pantalla OLED"));
-    for(;;); // No continuar
-  }
-  
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0,0);
-  display.println("Balanza toritos");
-  display.display();
+  lcd.print("Bascula Lista");
+  delay(1500);
 }
 
 void loop() {
-    display.clearDisplay();
-    display.setCursor(0,0);
-    display.println("Toro Read valor . ..");
-
-    float rpeso = balanza1.get_units(5)/100;
-    float rpeso2 = balanza2.get_units(5)/100; 
-    display.setCursor(0,8);
-    display.println("read = ");
-    display.setCursor(0,16);
-    display.println(rpeso);
-    display.setCursor(0,24);
-    display.println(rpeso2);
-    display.display();
-    delay(500);
-/*
-    display.setCursor(0,16);
-    display.println(balanza2.get_units(), 2); // Muestra el peso con dos decimales
-
-    balanza3.set_scale(2280.f); // Ajusta este valor según tu calibración
-    balanza3.tare(); // Pone la balanza a cero
-
-    display.setCursor(0, 24);
-    display.println(balanza3.get_units(), 2);
-
-    balanza4.set_scale(2280.f); // Ajusta este valor según tu calibración
-    balanza4.tare(); // Pone la balanza a cero
-
-    display.setCursor(0, 30);
-    display.println(balanza4.get_units(), 2);
-*/
+  int boton = analogRead(A0);
   
+  // Navegación (DERECHA / IZQUIERDA)
+  if (boton < 100) { 
+    sensorActual++;
+    if (sensorActual > 5) sensorActual = 1;
+    lcd.clear(); // Limpiamos al cambiar de modo
+    delay(300); 
+  } 
+  else if (boton < 600 && boton > 400) { 
+    sensorActual--;
+    if (sensorActual < 1) sensorActual = 5;
+    lcd.clear();
+    delay(300);
+  }
 
+  // Lógica de visualización
+  if (sensorActual <= 4) {
+    // MODO DIAGNÓSTICO (Sensores individuales)
+    lcd.setCursor(0, 0);
+    lcd.print("Sensor Indiv: "); lcd.print(sensorActual);
+    lcd.setCursor(0, 1);
+    
+    long valorCrudo = 0;
+    // Usamos una lectura rápida para diagnóstico
+    if (sensorActual == 1 && s1.is_ready()) valorCrudo = s1.get_value(1);
+    else if (sensorActual == 2 && s2.is_ready()) valorCrudo = s2.get_value(1);
+    else if (sensorActual == 3 && s3.is_ready()) valorCrudo = s3.get_value(1);
+    else if (sensorActual == 4 && s4.is_ready()) valorCrudo = s4.get_value(1);
+    
+    lcd.print("Raw/100: "); lcd.print(valorCrudo / 100);
+    lcd.print("      "); // Limpia caracteres sobrantes
+  } 
+  else {
+    // MODO BÁSCULA TOTAL (Case 5)
+    if (s1.is_ready() && s2.is_ready() && s3.is_ready() && s4.is_ready()) {
+      float total = s1.get_units(2) + s2.get_units(2) + s3.get_units(2) + s4.get_units(2);
+      
+      lcd.setCursor(0, 0);
+      lcd.print("PESO TOTAL:     ");
+      lcd.setCursor(0, 1);
+      lcd.print(total, 2); lcd.print(" kg      ");
+
+      // Botón SELECT para TARA (Solo en modo total)
+      if (boton < 800 && boton > 600) {
+        lcd.setCursor(0, 1);
+        lcd.print("Ajustando Cero..");
+        s1.tare(); s2.tare(); s3.tare(); s4.tare();
+      }
+    } else {
+      lcd.setCursor(0,0);
+      lcd.print("ERROR CONEXION");
+    }
+  }
+  delay(100); 
 }
