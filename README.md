@@ -1,30 +1,43 @@
-# OLEDPesa
+# ⚖️ OLEDPesa
 
-lastChange in local 2 ago 25
+Repositorio para el sistema de báscula de 4 celdas de carga utilizando **Arduino Mega 2560**, módulos **HX711** y un **LCD Keypad Shield**.
 
-create a repo on 27 dec 25
+---
 
-12 abr 26
-add scale and test one to one 
+## 📌 Historial del Proyecto
 
-Rojo e+
-Negro e-
-Blanco a-
-Verde a+
+* **27 Dic 2025:** Creación inicial del repositorio.
+* **12 Abr 2026:** Adición del sistema de escala y pruebas individuales de sensores (uno a uno).
+* **Último cambio:** Local, hace 2 días.
 
-Abajo izquierda 
-4 blanco azul 
-2121 2125
+---
 
-Abajo derecha 
-3 azul 
-Pin 26
-2095 2105
+## 🔌 Conexión de las Celdas de Carga (HX711)
 
-Arriba izquierda
-1 Verde 
-2154 2162
+Configuración del cableado del puente de Wheatstone hacia los módulos de pesaje:
 
-Arriba derecha
-2 café 
-2090 a 2111
+* **E+** 🔴 Rojo
+* **E-** ⚫ Negro
+* **A-** ⚪ Blanco
+* **A+** 🟢 Verde
+
+---
+
+## 📊 Registro de Calibración de Sensores
+
+Distribución física de los sensores en la tarima base, hilos asignados en el bus RJ45, pines digitales en el Arduino Mega y valores crudos de referencia con un peso patrón de 10 kg:
+
+| Posición | Sensor | Color Cable (RJ45) | Pin Arduino Mega | Rango de Valor Crudo (10 kg) |
+| :--- | :---: | :--- | :---: | :---: |
+| **Arriba Izquierda** | 1 | Verde | Pin 24 | `2154` a `2162` |
+| **Arriba Derecha** | 2 | Café | Pin 25 | `2090` a `2111` |
+| **Abajo Derecha** | 3 | Azul | Pin 26 | `2095` a `2105` |
+| **Abajo Izquierda** | 4 | Blanco Azul | Pin 27 | `2121` a `2125` |
+
+> *Nota: El pin de reloj (SCK) está unificado y compartido en el pin **22** para optimizar el bus del cable de red.*
+
+---
+
+## 📝 Próximos Pasos / Ajustes Físicos
+- [x] Corrección y remapeo de pines digitales del bloque central (24 al 27).
+- [ ] Calibración final considerando el peso muerto de la estructura (fierro y base de madera de la tarima).
