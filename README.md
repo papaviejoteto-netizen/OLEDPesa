@@ -18,6 +18,7 @@ Abajo izquierda
 
 Abajo derecha 
 3 azul 
+Pin 26
 2095 2105
 
 Arriba izquierda
